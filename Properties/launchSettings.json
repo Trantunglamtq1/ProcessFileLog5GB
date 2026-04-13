@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "ConsoleApp3": {
+      "commandName": "Project",
+      "remoteDebugEnabled": false,
+      "nativeDebugging": false
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}
