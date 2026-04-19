@@ -1,53 +1,60 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 namespace ProcessFileLog5GB
 {
     public class Read
     {
         public static async Task Main(string[] agrs)
         {
-            
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             string filePath = "file5gb.txt";
             var watch = new Stopwatch();
             watch.Start();
             Read countwords = new Read();
             if (!File.Exists(filePath))
             {
-                Console.WriteLine("File does not exist, creating file...");
+                Console.WriteLine("File chưa tồn tại đang tạo file  ...");
                 await WriteFile.GenerateRandomWordsFileAsync(filePath, 5000);
             }
             else
             {
-                Console.WriteLine("File already exists, skipping file creation...");
+                Console.WriteLine("File đã tồn tại ...");
             }
-            Console.WriteLine("Processing.....");
-            long result = await countwords.CountWordsAsync(filePath);
+            Console.WriteLine("Đang xử lí.....");
+            await countwords.CountWordsAsync(filePath);
             watch.Stop();
-            Console.WriteLine("Total words: " + result);
             Console.WriteLine($"Time: {watch.ElapsedMilliseconds} ms");
-            
+
         }
-        public async Task<long> CountWordsAsync(string filePath)
+        public async Task  CountWordsAsync(string filePath)
         {
-            long totalWords = 0;
-            await Task.Run(() =>
+            var wordCounts = new ConcurrentDictionary<string, int>();
+            Parallel.ForEach(File.ReadLines(filePath), line =>
             {
-                var lines = File.ReadLines(filePath);
-                Parallel.ForEach(lines, line =>
+
+                string[] words = line.Split(new[] { ' '}, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var word in words)
                 {
-                    int wordCount = line.Split(" ", StringSplitOptions.RemoveEmptyEntries)
-                    .Where(word => !string.IsNullOrWhiteSpace(word))
-                    .Count();
-                    Interlocked.Add(ref totalWords, wordCount);
-                });
+                    wordCounts.AddOrUpdate(word, 1, (key, oldValue) => oldValue + 1);
+                }
+
             });
-            return totalWords;
+            
+            Console.WriteLine("--- KẾT QUẢ TẦN SUẤT TỪ ---");
+            var sortedWordCounts = wordCounts.OrderByDescending(kvp => kvp.Value);
 
+            foreach (var kvp in sortedWordCounts)
+            {
+                Console.WriteLine($"Từ '{kvp.Key}': {kvp.Value:N0} lần");
+            }
         }
-    }
 
+    }
 }
