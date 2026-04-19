@@ -35,16 +35,17 @@ namespace ProcessFileLog5GB
         public async Task  CountWordsAsync(string filePath)
         {
             var wordCounts = new ConcurrentDictionary<string, int>();
+            long totalWords = 0;
             Parallel.ForEach(File.ReadLines(filePath), line =>
             {
-
+                
                 string[] words = line.Split(new[] { ' '}, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var word in words)
                 {
                     wordCounts.AddOrUpdate(word, 1, (key, oldValue) => oldValue + 1);
                 }
-
+                 Interlocked.Add(ref totalWords, words.Length);
             });
             
             Console.WriteLine("--- KẾT QUẢ TẦN SUẤT TỪ ---");
@@ -54,6 +55,8 @@ namespace ProcessFileLog5GB
             {
                 Console.WriteLine($"Từ '{kvp.Key}': {kvp.Value:N0} lần");
             }
+            Console.WriteLine($"Tổng số từ: {totalWords:N0}");
+
         }
 
     }
